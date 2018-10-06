@@ -1,16 +1,14 @@
-extern crate hyper;
 extern crate tokio;
 
 use std::error::Error;
 use std::io::{Cursor,Write};
 
-use tokio::io::{self,AsyncRead,AsyncWrite,Read};
+use tokio::io::{AsyncRead,AsyncWrite};
 use tokio::net::{TcpListener};
-use tokio::prelude::{future,stream,Async,Future,Stream};
+use tokio::prelude::{future,Async,Future,Stream};
 
 fn serve_http() -> Result<(), Box<Error>> {
-    tokio::run(TcpListener::bind(&"127.0.0.1:8080".parse()?)?.incoming().for_each(move |conn| {
-
+    tokio::run(TcpListener::bind(&"127.0.0.1:8081".parse()?)?.incoming().for_each(move |conn| {
         let future = future::lazy(move || { Ok(conn.split()) }).and_then(|(mut read, write)| {
             future::poll_fn(move || {
                 let mut vec = vec![0; 1400];
@@ -30,10 +28,10 @@ fn serve_http() -> Result<(), Box<Error>> {
             let pre_s = b"HTTP/1.1 200 OK\nContent-Length: ";
             let post_s = b"\n\n";
             let mut cur = Cursor::new(Vec::with_capacity(b + pre_s.len() + post_s.len() + 10));
-            cur.write(pre_s);
-            cur.write(b.to_string().as_bytes());
-            cur.write(post_s);
-            cur.write(&vec);
+            cur.write(pre_s)?;
+            cur.write(b.to_string().as_bytes())?;
+            cur.write(post_s)?;
+            cur.write(&vec)?;
             Ok((write, cur))
         }).and_then(|(mut w, cur)| {
             future::poll_fn(move || {
@@ -55,11 +53,8 @@ fn serve_http() -> Result<(), Box<Error>> {
 }
 
 fn main() {
-    match serve_http() {
-        Ok(_) => (),
-        Err(e) => {
-            println!("{}", e);
-            std::process::exit(1);
-        }
-    };
+    if let Err(e) = serve_http() {
+        println!("{}", e);
+        std::process::exit(1);
+    }
 }

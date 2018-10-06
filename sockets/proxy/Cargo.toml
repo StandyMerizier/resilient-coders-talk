@@ -1,7 +1,9 @@
 [package]
-name = "server"
+name = "proxy"
 version = "0.1.0"
 authors = ["John Baublitz <john.m.baublitz@gmail.com>"]
+edition = "2018"
 
 [dependencies]
+hyper = "*"
 tokio = "*"
