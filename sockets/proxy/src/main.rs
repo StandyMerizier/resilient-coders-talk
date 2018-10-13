@@ -2,7 +2,7 @@ extern crate hyper;
 extern crate tokio;
 
 use std::error::Error;
-use std::net::SocketAddr;
+use std::net::{ToSocketAddrs};
 
 use hyper::{Body,Method,Response};
 use hyper::server::conn::Http;
@@ -24,15 +24,21 @@ fn serve_proxy() -> Result<(), Box<Error>> {
             tokio::spawn(Http::new().serve_connection(conn, service::service_fn(move |req| {
                 let mut response_builder = Response::builder();
                 if req.method() == Method::CONNECT {
-                    let sock_addr = if let Some(auth) = req.uri().authority_part() {
-                        match auth.to_string().parse::<SocketAddr>() {
+                    let mut sock_addr_iter = if let Some(auth) = req.uri().authority_part() {
+                        match auth.to_string().to_socket_addrs() {
                             Ok(u) => u,
                             Err(e) => {
                                 println!("{}", e);
                                 response_builder.status(400);
                                 return response_builder.body(Body::from("Bad URI passed in CONNECT request"));
-                            },
+                            }
                         }
+                    } else {
+                        response_builder.status(400);
+                        return response_builder.body(Body::from("Bad URI passed in CONNECT request"));
+                    };
+                    let sock_addr = if let Some(sa) = sock_addr_iter.next() {
+                        sa
                     } else {
                         response_builder.status(400);
                         return response_builder.body(Body::from("Bad URI passed in CONNECT request"));

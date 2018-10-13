@@ -10,8 +10,10 @@ int main(void) {
 	if (write(fd, string, strlen(string)) < 0) {
 		printf("ERROR: write() - %s\n", strerror(errno));
 	}
+	if (close(fd) < 0) {
+		printf("ERROR: close()");
+	}
 	if (unlink("./test.txt") < 0) {
 		printf("ERROR: unlink() - %s\n", strerror(errno));
 	}
-	close(fd);
 }

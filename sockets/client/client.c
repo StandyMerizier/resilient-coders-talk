@@ -24,23 +24,20 @@ int main(int argc, char **argv) {
 		printf("Please supply an IP address and port\n");
 		return 1;
 	}
-	if (inet_aton(argv[1], &addr.sin_addr) < 0) {
+	if (inet_aton("127.0.0.1", &addr.sin_addr) < 0) {
 		printf("Failed to parse IP address\n");
 		return 1;
 	};
 	int port;
-	if ((port = atoi(argv[2])) == 0) {
-		printf("Invalid port\n");
-		return 1;
-	}
-	addr.sin_port = htons(port);
+	addr.sin_port = htons(8080);
 
 	if (connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
 		printf("Failed to connect to %s on port %d: %s\n", argv[1], port, strerror(errno));
 		return 1;
 	}
 	
-	char *http_req = "CONNECT 127.0.0.1:8081 HTTP/1.1\n\n";
+	char http_req[1400];
+	snprintf(http_req, sizeof(http_req), "CONNECT %s:%s HTTP/1.1\n\n", argv[1], argv[2]);
 	if (write(sock, http_req, strlen(http_req)) < 0) {
 		printf("Failed to write to socket\n");
 		return 1;
@@ -61,8 +58,9 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	char *post_req = "POST /testing HTTP/1.1\n\nLook at this awesome POST request!";
-	if (write(sock, post_req, strlen(post_req)) < 0) {
+	char get_req[1400];
+	snprintf(get_req, sizeof(get_req), "GET / HTTP/1.1\nHost: %s\nUser-Agent: curl/1.61.7\nAccept: */*\n\n", argv[1]);
+	if (write(sock, get_req, strlen(get_req)) < 0) {
 		printf("Failed to send request\n");
 		return 1;
 	}

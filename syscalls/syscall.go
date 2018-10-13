@@ -12,4 +12,10 @@ func main() {
 	if _, err := syscall.Write(fd, stringSlice); err != nil {
 		fmt.Println(err)
 	}
+	if err := syscall.Close(fd); err != nil {
+		fmt.Println(err)
+	}
+	if err := syscall.Unlink("./test.txt"); err != nil {
+		fmt.Println(err)
+	}
 }
